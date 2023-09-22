@@ -57,6 +57,13 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                   child: Card(
                     margin: EdgeInsets.symmetric(horizontal: isPortrait ? 0 : 5, vertical: 0),
                     color: Color.lerp(widget.status.color, Colors.black, widget.record.shift.index / 4),
+                    shape: RoundedRectangleBorder( //<-- SEE HERE
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(
+                        color: Colors.black,
+                        width: 2
+                      ),
+                    ),
                     child: Opacity(
                       opacity: widget.status.isFullLocked ? 0.8 : 1,
                       child: Container(
