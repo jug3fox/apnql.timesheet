@@ -30,7 +30,7 @@ void main() async {
   await Future.wait(preLoading);
   await notifications;
 
-  await preferences.remove("employee_id");
+  //await preferences.remove("employee_id");
 
   runApp(OroTimesheetApp());
 }

@@ -62,7 +62,7 @@ class _EmployeeInfoPageState extends State<EmployeeInfoPage> {
           elevation: 10,
           foregroundColor: Colors.white,
           backgroundColor: Color.lerp(Theme.of(context).colorScheme.primary, Colors.black, 0.5),
-          toolbarHeight: isPortrait ? 50 : 24,
+          toolbarHeight: isPortrait ? 50 : 35,
           titleSpacing: 0,
 
           title: Flex(

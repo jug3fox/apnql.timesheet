@@ -34,10 +34,10 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
           double hourPercentOut = ((widget.record.timeOut.hour + (widget.record.timeOut.minute / 60)) / 24); // From 6 to 20 hour
 
           return Positioned(
-            left: isPortrait ? hourPercentIn * (widget.size.width) : 0,
-            right: isPortrait ? (1 - hourPercentOut ) * (widget.size.width) : 0,
-            top: isPortrait ? 20 : hourPercentIn * (widget.size.height),
-            bottom: isPortrait ? 0 : (1 - hourPercentOut ) * (widget.size.height),
+            left: isPortrait ? hourPercentIn * (widget.size.width) + 1 : 0,
+            right: isPortrait ? (1 - hourPercentOut ) * (widget.size.width) + 1 : 0,
+            top: isPortrait ? 20 : hourPercentIn * (widget.size.height) + 1,
+            bottom: isPortrait ? 0 : (1 - hourPercentOut ) * (widget.size.height) + 1,
             child: GestureDetector(
               onTap: widget.status.isFullLocked ? null : () {
                 showDialog(
