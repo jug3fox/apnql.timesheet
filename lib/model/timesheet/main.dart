@@ -12,6 +12,13 @@ class TimeSheetDay {
     return result;
   });
 
+
+  Iterable<Shift> get shiftLeft => Shift.values.where((element) {
+    return !records.map((e) => e.shift?.index).contains(element.index) && element.index != 0;
+  }).toList()..sort((a, b) => a.index.compareTo(b.index));
+
+  Shift? get newShift => shiftLeft.isEmpty ? null : shiftLeft.first;
+
   TimeSheetDay get copy {
     TimeSheetDay copyDay = TimeSheetDay(day, records: records.map((e) => e.copy).toList());
     return copyDay;
