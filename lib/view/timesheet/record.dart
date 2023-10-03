@@ -12,11 +12,20 @@ import 'button_time.dart';
 
 class TimesheetRecordWidget extends StatefulWidget {
   final WeekStatus? status;
+  final Function(bool dragging)? dragChange;
   final TimesheetWeek week;
   final TimeSheetDay day;
   final EmptyTimesheetRecord record;
   final Size size;
-  const TimesheetRecordWidget({this.status, required this.week, required this.record, required this.day, required this.size, Key? key}) : super(key: key);
+  const TimesheetRecordWidget({
+    this.dragChange,
+    this.status,
+    required this.week,
+    required this.record,
+    required this.day,
+    required this.size,
+    Key? key
+  }) : super(key: key);
 
   @override
   State<TimesheetRecordWidget> createState() => _TimesheetRecordWidgetState();
@@ -33,23 +42,13 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
           double hourPercentIn = ((widget.record.timeIn.hour + (widget.record.timeIn.minute / 60)) / 24);
           double hourPercentOut = ((widget.record.timeOut.hour + (widget.record.timeOut.minute / 60)) / 24); // From 6 to 20 hour
 
+
           return Positioned(
             left: isPortrait ? hourPercentIn * (widget.size.width) + 1 : 0,
             right: isPortrait ? (1 - hourPercentOut ) * (widget.size.width) + 1 : 0,
             top: isPortrait ? 20 : hourPercentIn * (widget.size.height) + 1,
             bottom: isPortrait ? 0 : (1 - hourPercentOut ) * (widget.size.height) + 1,
-            child: GestureDetector(
-              onTap: widget.status.isFullLocked ? null : () {
-                showDialog(
-                  context: context,
-                  builder: (context) => TimesheetRecordDialog(
-                    record: widget.record,
-                    day: widget.day,
-                    week: widget.week,
-                  ),
-                );
-              },
-              child: Container(
+            child: Container(
                 alignment: Alignment.center,
                 //color: Colors.green.withOpacity(0.3),
                 child: Container(
@@ -66,43 +65,170 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                     ),
                     child: Opacity(
                       opacity: widget.status.isFullLocked ? 0.8 : 1,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 2),
-                        alignment: isPortrait ? null : Alignment.center,
-                        child: Flex(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          direction: widget.record.date.weekday > 5 ? Axis.horizontal : Axis.vertical,
-                          children: [
-                            Text(widget.record.timeIn.show,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.labelMedium?.apply(
-                                  color: Colors.white,
-                                  fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          MaterialButton(
+                            onPressed: () {
+                              print("tapped");
+                              showDialog(
+                                context: context,
+                                builder: (context) => TimesheetRecordDialog(
+                                  record: widget.record,
+                                  day: widget.day,
+                                  week: widget.week,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 2),
+                              alignment: isPortrait ? null : Alignment.center,
+                              child: Flex(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                direction: widget.record.date.weekday > 5 ? Axis.horizontal : Axis.vertical,
+                                children: [
+                                  Text(widget.record.timeIn.show,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  ),
+                                  widget.record.date.weekday > 5 ?
+                                  Text("-",
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  ) : Container(),
+                                  Text(widget.record.timeOut.show,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
-                            widget.record.date.weekday > 5 ?
-                            Text("-",
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.labelMedium?.apply(
-                                  color: Colors.white,
-                                  fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                          ),
+                          /*GestureDetector(
+                            onTap: widget.status.isFullLocked ? null : () {
+                              print("tapped");
+                              showDialog(
+                                context: context,
+                                builder: (context) => TimesheetRecordDialog(
+                                  record: widget.record,
+                                  day: widget.day,
+                                  week: widget.week,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 2),
+                              alignment: isPortrait ? null : Alignment.center,
+                              child: Flex(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                direction: widget.record.date.weekday > 5 ? Axis.horizontal : Axis.vertical,
+                                children: [
+                                  Text(widget.record.timeIn.show,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  ),
+                                  widget.record.date.weekday > 5 ?
+                                  Text("-",
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  ) : Container(),
+                                  Text(widget.record.timeOut.show,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.labelMedium?.apply(
+                                        color: Colors.white,
+                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                                    ),
+                                  )
+                                ],
                               ),
-                            ) : Container(),
-                            Text(widget.record.timeOut.show,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.labelMedium?.apply(
-                                  color: Colors.white,
-                                  fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
+                            ),
+                          ),*/
+
+                          widget.record is TimesheetRecord ? Positioned(
+                            left: isPortrait ? 3 : null,
+                            top: isPortrait ? null : 3,
+                            child: Draggable(
+                              onDragStarted: () {
+                                if (widget.dragChange != null) widget.dragChange!(true);
+                              },
+                              onDragEnd: (details) {
+                                if (widget.dragChange != null) widget.dragChange!(false);
+                              },
+                              data: NewRecordTime(
+                                direction: TimeDirection.timeIn,
+                                record: widget.record as TimesheetRecord,
                               ),
-                            )
-                          ],
-                        ),
+                              feedback: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: Colors.black.withOpacity(0.4),
+                                ),
+                                padding: EdgeInsets.all(4),
+                                  child: RotatedBox(
+                                    quarterTurns: isPortrait ? 0 : 1,
+                                    child: Icon(Icons.sync_alt, color: Color.lerp(Colors.black, Colors.green, 1),),
+                                  )
+                              ),
+                              child: RotatedBox(
+                                quarterTurns: isPortrait ? 0 : 1,
+                                child: Icon(Icons.first_page, size: 16, color: Colors.white,),
+                              ),
+                            ),
+                          ) : Container(),
+                          widget.record is TimesheetRecord ? Positioned(
+                            right: isPortrait ? 3 : null,
+                            bottom: isPortrait ? null : 3,
+                            child: Draggable(
+                              onDragStarted: () {
+                                if (widget.dragChange != null) widget.dragChange!(true);
+                              },
+                              onDragEnd: (details) {
+                                if (widget.dragChange != null) widget.dragChange!(false);
+                              },
+                              data: NewRecordTime(
+                                direction: TimeDirection.timeOut,
+                                record: widget.record as TimesheetRecord,
+                              ),
+                              feedback: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: Colors.black.withOpacity(0.4),
+                                ),
+                                padding: EdgeInsets.all(4),
+                                child: RotatedBox(
+                                  quarterTurns: isPortrait ? 0 : 1,
+                                  child: Icon(Icons.sync_alt, color: Color.lerp(Colors.black, Colors.green, 1),),
+                                )
+                              ),
+
+                              child: RotatedBox(
+                                quarterTurns: isPortrait ? 0 : 1,
+                                child: Icon(Icons.last_page, size: 16, color: Colors.white,),
+                              ),
+                            ),
+                          ) : Container(),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
             ),
           );
         },

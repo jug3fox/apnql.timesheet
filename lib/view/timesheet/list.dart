@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:apnql_timesheet/model/employee/main.dart';
 import 'package:apnql_timesheet/model/timesheet/list.dart';
 import 'package:apnql_timesheet/model/timesheet/main.dart';
@@ -10,6 +9,8 @@ import 'package:apnql_timesheet/view/timesheet/week.dart';
 
 import '../../main.dart';
 import 'menu.dart';
+
+import 'package:flutter/services.dart';
 
 
 class TimeSheetWeeksWidget extends StatefulWidget {
@@ -47,6 +48,8 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    ServicesBinding.instance.keyboard.addHandler(_onKey);
 
     Future.delayed(Duration(milliseconds: 1)).then((value) {
       scrollController.jumpTo((scrollController.position.extentTotal / 24) * 7);
@@ -90,6 +93,34 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
         });
       }
     });
+  }
+
+
+  bool _onKey(KeyEvent event) {
+    bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
+    final key = event.logicalKey.keyLabel;
+
+    if (event is KeyDownEvent) {
+      print("Key down: $key");
+    } else if (event is KeyUpEvent) {
+      print("Key up: ${event.logicalKey}: ${event.physicalKey}");
+      if (key == "Arrow Down" && isPortrait || key == "Arrow Right" && !isPortrait) {
+        controller.nextPage(duration: Duration(milliseconds: 1200), curve: Curves.easeInOutQuad);
+      } else if (key == "Arrow Up" && isPortrait || key == "Arrow Left" && !isPortrait) {
+        controller.previousPage(duration: Duration(milliseconds: 1200), curve: Curves.easeInOutQuad);
+
+      } else if (key == "Arrow Down" && !isPortrait || key == "Arrow Right" && isPortrait) {
+        scrollController.animateTo(scrollController.offset + 50, duration: Duration(milliseconds: 1500), curve: Curves.easeInOutQuad);
+      } else if (key == "Arrow Up" && !isPortrait || key == "Arrow Left" && isPortrait) {
+        scrollController.animateTo(scrollController.offset - 50, duration: Duration(milliseconds: 1500), curve: Curves.easeInOutQuad);
+      }
+    } else if (event is KeyRepeatEvent) {
+    } else if (event is KeyEvent) {
+      print("Key repeat: $key");
+    }
+
+    return false;
   }
 
   double get scale => 24 / (range.end - range.start);
@@ -228,7 +259,7 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
       ),
       bottomNavigationBar: Container(
         color: Color.lerp(currentWeek.status.status.color, Colors.black, 0.5),
-        height: isPortrait ? 50 : 36,
+        height: isPortrait ? 60 : 36,
         child: Flex(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           direction: Axis.horizontal,

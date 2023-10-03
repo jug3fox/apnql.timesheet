@@ -50,6 +50,9 @@ class EmptyTimesheetRecord {
     controller.add(this);
   }
 
+  DateTime get timeInDate => DateTime(date.year, date.month, date.day, timeIn.hour, timeIn.minute);
+  DateTime get timeOutDate => DateTime(date.year, date.month, date.day, timeOut.hour, timeOut.minute);
+
   set time(MapEntry<TimeOfDay?, TimeOfDay?> newValue) {
     if (newValue.key != null) {
       _timeIn = newValue.key!;
@@ -130,7 +133,7 @@ class EmptyTimesheetRecord {
       activities.where((element) => element.id == preferences.getInt("prefActivity")).first :
       activities.first;
 
-    if (shift != null && timeIn != null && timeOut != null) {
+    if (shift != null && (timeIn == null && timeOut == null)) {
       _timeIn = (_timeIn ?? shift!.delay?.start);
       _timeOut = (_timeOut ?? shift!.delay?.end);
     } else if (timeIn != null && timeOut != null) {
@@ -153,6 +156,23 @@ class EmptyTimesheetRecord {
     copyRecord.notes = notes;
     return copyRecord;
   }
+}
+
+class NewRecordTime {
+  final TimesheetRecord? record;
+  final TimeDirection? direction;
+  DateTime? time;
+
+  NewRecordTime({
+    this.record,
+    this.direction,
+    this.time,
+  });
+}
+
+enum TimeDirection {
+  timeIn,
+  timeOut,
 }
 
 enum TimesheetStatus {

@@ -41,6 +41,7 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
 
   ValueNotifier<Offset> offset = ValueNotifier(Offset(0, 0));
   int gap = 30;
+  bool isDragging = false;
 
   EmptyTimesheetRecord? _newRecord;
 
@@ -85,38 +86,14 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
           return Expanded(
             flex: isWeekend ? 10 : 20,
             child: Container(
-              color: Colors.black.withOpacity((widget.day.day) % 2 == 1 ? 0.3 : 0.2),
+              color: Colors.black.withOpacity((widget.day.day) % 2 == 1 ? 0.6 : 0.4),
               alignment: Alignment.center,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-
-                  StreamBuilder(
-                    stream: _newRecord?.timeStream,
-                    builder: (context, snapshot) {
-                      print("timeOut: ${_newRecord?.timeOut}");
-                      if (_newRecord == null) return Container();
-                      return TimesheetRecordWidget(
-                          record: _newRecord!,
-                          week: widget.week,
-                          status: widget.status,
-                          day: widget.timeSheetDay!,
-                          size: widget.realSize
-                      );
-                      return Container();
-                    },
-                  ),
                   Flex(
                     direction: isPortrait ? Axis.horizontal : Axis.vertical,
                     children: List.generate(24, (index) {
-                      Container child = Container(
-                        decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Colors.black.withOpacity(0.2)
-                            ),
-                            color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
-                        ),
-                      );
                       return Expanded(
                           child: Container(
                             decoration: BoxDecoration(
@@ -137,30 +114,130 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                                 );
                                 DateTime targetData = data.add(Duration(minutes: 15));
                                 return Expanded(
-                                  child: LongPressDraggable<DateTime>(
-                                    data: data,
-                                    feedback: Text("Allo"),
-                                    child: DragTarget<DateTime>(
-                                      onMove: (details) {
-                                        DateTime start = details.data;
+                                  child: LongPressDraggable<NewRecordTime>(
+                                    onDragStarted: () {
+                                      print("drsag start");
+                                      isDragging = true;
+                                      setState(() {
+                                        _newRecord = EmptyTimesheetRecord(data,
+                                            timeIn: data.timeOfDay,
+                                            timeOut: targetData.timeOfDay,
+                                            shift: widget.timeSheetDay?.newShift
+                                        );
+                                      });
+                                    },
+                                    onDragEnd: (details) {
+                                      isDragging = false;
+                                    },
+                                    data: NewRecordTime(
+                                        time: data
+                                    ),
+                                    feedback: Container(),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        /*border: Border.all(
+                                          color: Colors.red,
+                                        )*/
+                                      ),
+                                      //child: Text("$index-${minutes / 4}"),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          )
+                      );
+                    }),
+                  ),
+                  StreamBuilder(
+                    stream: _newRecord?.timeStream,
+                    builder: (context, snapshot) {
+                      print("timeOut: ${_newRecord?.timeOut}");
+                      if (_newRecord == null) return Container();
+                      return TimesheetRecordWidget(
+                          record: _newRecord!,
+                          week: widget.week,
+                          status: widget.status,
+                          day: widget.timeSheetDay!,
+                          size: widget.realSize
+                      );
+                      return Container();
+                    },
+                  ),
 
-                                        bool validGap = targetData.difference(start).inMinutes >= 60;
-                                        if ((_newRecord == null && validGap) || (_newRecord != null && !validGap)) {
-                                          setState(() {
-                                            print("valid: ${validGap}, newShift: ${widget.timeSheetDay?.shiftLeft}");
-                                            _newRecord = validGap ? EmptyTimesheetRecord(data,
-                                              timeIn: start.timeOfDay,
-                                              timeOut: targetData.timeOfDay,
-                                              shift: widget.timeSheetDay?.newShift
-                                            ) : null;
-                                          });
+                  Stack(
+                    children: (widget.timeSheetDay?.records ?? []).map((record) {
+                      if (record is! TimesheetRecord) {
+                        return Container();
+                      }
+                      return TimesheetRecordWidget(
+                          record: record,
+                          dragChange: (dragging) {
+                            setState(() {
+                              isDragging = dragging;
+                            });
+                          },
+                          week: widget.week,
+                          status: widget.status,
+                          day: widget.timeSheetDay!,
+                          size: widget.realSize
+                      );
+                    }).toList(),
+                  ),
+
+
+                  Visibility(
+                      visible: isDragging,
+                      child: Flex(
+                          direction: isPortrait ? Axis.horizontal : Axis.vertical,
+                          children: List.generate(24, (index) {
+                            return Expanded(
+                              child: Flex(
+                                direction: isPortrait ? Axis.horizontal : Axis.vertical,
+                                children: List.generate(4, (minutes) {
+
+                                  DateTime targetData = DateTime(
+                                      widget.day.year,
+                                      widget.day.month,
+                                      widget.day.day,
+                                      index,
+                                      minutes * 15
+                                  ).add(Duration(minutes: 15));
+
+                                  return Expanded(
+                                    child: DragTarget<NewRecordTime>(
+                                      onMove: (details) {
+                                        print("entering");
+                                        if (details.data.record != null) {
+                                          if (details.data.direction == TimeDirection.timeIn) {
+                                            details.data.record!.timeIn = targetData.timeOfDay;
+                                          } else {
+                                            details.data.record!.timeOut = targetData.timeOfDay;
+                                          }
+                                        } else if (details.data.time != null) {
+                                          DateTime start = details.data.time!;
+
+                                          bool validGap = targetData.difference(start).inMinutes >= 60;
+                                          print("valid: ${validGap}, newShift: ${widget.timeSheetDay?.shiftLeft}");
+                                          if ((_newRecord == null && validGap) || (_newRecord != null && !validGap)) {
+                                            setState(() {
+                                              _newRecord = validGap ? EmptyTimesheetRecord(details.data.time!,
+                                                  timeIn: start.timeOfDay,
+                                                  timeOut: targetData.timeOfDay,
+                                                  shift: widget.timeSheetDay?.newShift
+                                              ) : null;
+                                            });
+                                          }
+                                          _newRecord?.timeOut = targetData.timeOfDay;
                                         }
-                                        _newRecord?.timeOut = targetData.timeOfDay;
                                       },
                                       onAccept: (result) {
                                         print(_newRecord);
-                                        _newRecord?.timeOut = targetData.timeOfDay;
-                                        if (_newRecord != null) {
+                                        if(result.record != null) {
+                                          print("saving: ${result.record?.timeOut}");
+                                          result.record?.save;
+                                        } else {
                                           showDialog(
                                             context: context,
                                             builder: (context) => TimesheetRecordDialog(
@@ -179,9 +256,9 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                                       builder: (context, candidateData, rejectedData) {
                                         return Container(
                                           decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: Colors.green.withOpacity(0)
-                                            ),
+                                            /*border: Border.all(
+                                                color: Colors.blue.withOpacity(0.3)
+                                            ),*/
                                             //color: Colors.red.withOpacity(0.3),
                                           ),
                                           alignment: Alignment.center,
@@ -189,27 +266,12 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                                         );
                                       },
                                     ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          )
-                      );
-                    }),
-                  ),
-                  Stack(
-                    children: (widget.timeSheetDay?.records ?? []).map((record) {
-                      if (record is! TimesheetRecord) {
-                        return Container();
-                      }
-                      return TimesheetRecordWidget(
-                          record: record,
-                          week: widget.week,
-                          status: widget.status,
-                          day: widget.timeSheetDay!,
-                          size: widget.realSize
-                      );
-                    }).toList(),
+                                  );
+                                }),
+                              ),
+                            );
+                          })
+                      )
                   ),
                   ValueListenableBuilder(
                     valueListenable: offset,
@@ -219,7 +281,7 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                       TimeOfDay hoursWorked = widget.timeSheetDay!.hoursWorked;
                       return Positioned(
                         left: isPortrait ? offset.value.dx : 0,
-                        width: isPortrait ? 200 : null,
+                        width: isPortrait ? 280 : null,
                         right: isPortrait ? null : 0,
 
                         top: isPortrait ? 0 : offset.value.dx,
