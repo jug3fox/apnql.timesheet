@@ -10,6 +10,7 @@ extension DateExt on DateTime {
   String get onlyTextDate => DateFormat("d MMM yyyy", "fr_CA").format(this);
   String get onlyTime => DateFormat("HH:mm:ss").format(this);
   String get onlyMinutes => DateFormat("HH:mm").format(this);
+  TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
 
   int get weekDay => weekday == 7 ? 0 : weekday;
 }

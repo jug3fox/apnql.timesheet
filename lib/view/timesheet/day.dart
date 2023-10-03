@@ -42,6 +42,8 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
   ValueNotifier<Offset> offset = ValueNotifier(Offset(0, 0));
   int gap = 30;
 
+  EmptyTimesheetRecord? _newRecord;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -120,16 +122,34 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                                 );
                                 DateTime targetData = data.add(Duration(minutes: 15));
                                 return Expanded(
-                                  child: Draggable(
+                                  child: LongPressDraggable(
+                                    onDragStarted: () {
+                                      setState(() {
+                                        _newRecord = EmptyTimesheetRecord(data,
+                                          timeIn: data.timeOfDay,
+                                          timeOut: targetData.timeOfDay,
+                                        );
+                                      });
+                                    },
                                     data: data,
                                     feedback: Text("Allo"),
                                     child: DragTarget(
+                                      onMove: (details) {
+                                        _newRecord?.timeOut = targetData.timeOfDay;
+                                      },
                                       onAccept: (result) {
+                                        print(_newRecord);
+                                        _newRecord?.timeOut = targetData.timeOfDay;
                                         print("from: $result, to: ${targetData}");
                                       },
                                       builder: (context, candidateData, rejectedData) {
                                         return Container(
-                                          color: Colors.red.withOpacity(0.3),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.green.withOpacity(0.3)
+                                            ),
+                                            color: Colors.red.withOpacity(0.3),
+                                          ),
                                           alignment: Alignment.center,
                                           //child: Text("$index-${minutes / 4}"),
                                         );
@@ -142,6 +162,21 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                           )
                       );
                     }),
+                  ),
+                  StreamBuilder(
+                      stream: _newRecord?.timeStream,
+                      builder: (context, snapshot) {
+                        print("timeOut: ${_newRecord?.timeOut}");
+                        if (_newRecord == null) return Container();
+                        return TimesheetRecordWidget(
+                            record: _newRecord!,
+                            week: widget.week,
+                            status: widget.status,
+                            day: widget.timeSheetDay!,
+                            size: widget.realSize
+                        );
+                        return Container();
+                      },
                   ),
                   Stack(
                     children: (widget.timeSheetDay?.records ?? []).map((record) {

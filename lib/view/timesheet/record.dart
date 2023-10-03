@@ -14,7 +14,7 @@ class TimesheetRecordWidget extends StatefulWidget {
   final WeekStatus? status;
   final TimesheetWeek week;
   final TimeSheetDay day;
-  final TimesheetRecord record;
+  final EmptyTimesheetRecord record;
   final Size size;
   const TimesheetRecordWidget({this.status, required this.week, required this.record, required this.day, required this.size, Key? key}) : super(key: key);
 
@@ -28,7 +28,7 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
     bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
 
     return StreamBuilder(
-        stream: widget.record.stream,
+        stream: widget.record.timeStream,
         builder: (context, snapshot) {
           double hourPercentIn = ((widget.record.timeIn.hour + (widget.record.timeIn.minute / 60)) / 24);
           double hourPercentOut = ((widget.record.timeOut.hour + (widget.record.timeOut.minute / 60)) / 24); // From 6 to 20 hour
@@ -56,7 +56,7 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                   width: double.infinity,
                   child: Card(
                     margin: EdgeInsets.symmetric(horizontal: isPortrait ? 0 : 5, vertical: 0),
-                    color: Color.lerp(widget.status.color, Colors.black, widget.record.shift.index / 4),
+                    color: Color.lerp(widget.status.color, Colors.black, (widget.record.shift?.index ?? 0) / 4),
                     shape: RoundedRectangleBorder( //<-- SEE HERE
                       borderRadius: BorderRadius.circular(15),
                       side: BorderSide(

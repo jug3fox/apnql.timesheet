@@ -19,6 +19,7 @@ import '../main.dart';
 class EmptyTimesheetRecord {
   final StreamController<EmptyTimesheetRecord> controller = StreamController.broadcast();
   Stream<EmptyTimesheetRecord> get stream => controller.stream;
+  Stream<String> get timeStream => controller.stream.map((event) => "${event._timeIn}-${event._timeOut}").distinct();
 
   final StreamController<TimesheetRecord> _addController = StreamController.broadcast();
   Stream<TimesheetRecord> get addStream => _addController.stream;
@@ -114,6 +115,8 @@ class EmptyTimesheetRecord {
 
   EmptyTimesheetRecord(this.date, {
     this.shift,
+    TimeOfDay? timeIn,
+    TimeOfDay? timeOut,
     this.parent,
     this.notes,
   }) {
@@ -127,9 +130,12 @@ class EmptyTimesheetRecord {
       activities.where((element) => element.id == preferences.getInt("prefActivity")).first :
       activities.first;
 
-    if (shift != null) {
-      _timeIn = _timeIn ?? shift!.delay?.start;
-      _timeOut = _timeOut ?? shift!.delay?.end;
+    if (shift != null && timeIn != null && timeOut != null) {
+      _timeIn = (_timeIn ?? shift!.delay?.start);
+      _timeOut = (_timeOut ?? shift!.delay?.end);
+    } else if (timeIn != null && timeOut != null) {
+      _timeIn = timeIn;
+      _timeOut = timeOut;
     }
   }
 
