@@ -92,13 +92,52 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                   Flex(
                     direction: isPortrait ? Axis.horizontal : Axis.vertical,
                     children: List.generate(24, (index) {
+                      Container child = Container(
+                        decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.black.withOpacity(0.2)
+                            ),
+                            color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                        ),
+                      );
                       return Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.black.withOpacity(0.2)
-                              ),
-                              color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                                border: Border.all(
+                                    color: Colors.black.withOpacity(0.2)
+                                ),
+                                color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                            ),
+                            child: Flex(
+                              direction: isPortrait ? Axis.horizontal : Axis.vertical,
+                              children: List.generate(4, (minutes) {
+                                DateTime data = DateTime(
+                                  widget.day.year,
+                                  widget.day.month,
+                                  widget.day.day,
+                                  index,
+                                  minutes * 15
+                                );
+                                DateTime targetData = data.add(Duration(minutes: 15));
+                                return Expanded(
+                                  child: Draggable(
+                                    data: data,
+                                    feedback: Text("Allo"),
+                                    child: DragTarget(
+                                      onAccept: (result) {
+                                        print("from: $result, to: ${targetData}");
+                                      },
+                                      builder: (context, candidateData, rejectedData) {
+                                        return Container(
+                                          color: Colors.red.withOpacity(0.3),
+                                          alignment: Alignment.center,
+                                          //child: Text("$index-${minutes / 4}"),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              }),
                             ),
                           )
                       );
