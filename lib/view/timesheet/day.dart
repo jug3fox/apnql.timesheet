@@ -95,10 +95,40 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                       return Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.black.withOpacity(0.2)
-                              ),
-                              color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                                border: Border.all(
+                                    color: Colors.black.withOpacity(0.2)
+                                ),
+                                color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                            ),
+                            child: Flex(
+                              direction: isPortrait ? Axis.horizontal : Axis.vertical,
+                              children: List.generate(4, (indexMinutes) {
+                                double minutes = indexMinutes / 4;
+                                DateTime start = DateTime(widget.day.year, widget.day.month, widget.day.day, index, indexMinutes);
+                                DateTime end = DateTime(widget.day.year, widget.day.month, widget.day.day, index, indexMinutes);
+                                end = end.add(const Duration(minutes: 15));
+                                return Expanded(
+                                  child: DragTarget(
+                                    onAccept: (data) {
+                                      print("data: $data");
+                                    },
+                                    builder: (context, candidateData, rejectedData) {
+                                      return LongPressDraggable(
+                                          data: index,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.red.withOpacity(0.05)
+                                                ),
+                                                color: Theme.of(context).colorScheme.secondary.withOpacity(index % 2 == 1 ? 0.15 : 0)
+                                            ),
+                                          ),
+                                          feedback: Text("This")
+                                      );
+                                    },
+                                  ),
+                                );
+                              }),
                             ),
                           )
                       );
