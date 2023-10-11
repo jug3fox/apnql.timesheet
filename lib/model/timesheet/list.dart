@@ -112,6 +112,7 @@ class TimesheetWeek extends OroList<TimesheetRecord> {
     return MapEntry(
         week.start.add(Duration(days: index)),
         TimeSheetDay(dateTime,
+            employeeId: employeeId,
             records: listRecords
         )
     );

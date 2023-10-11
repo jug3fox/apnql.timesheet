@@ -62,17 +62,82 @@ class _EmployeeInfoPageState extends State<EmployeeInfoPage> {
           elevation: 10,
           foregroundColor: Colors.white,
           backgroundColor: Color.lerp(Theme.of(context).colorScheme.primary, Colors.black, 0.5),
-          toolbarHeight: isPortrait ? 50 : 35,
+          toolbarHeight: isPortrait ? 60 : 35,
           titleSpacing: 0,
 
-          title: Flex(
-            direction: Axis.vertical,
-            children: [
-              StreamBuilder(
-                  stream: employeeInfo.stream,
-                  builder: (context, snapshot) => Text(employeeInfo.name ?? ""),
-              ),
-            ],
+          title:
+          StreamBuilder(
+            stream: employeeInfo.stream,
+            builder: (context, snapshot) {
+              return SizedBox(
+                width: isPortrait ? null : 500,
+                child: Flex(
+                  direction: isPortrait ? Axis.vertical : Axis.horizontal,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Container(
+                      //color: Colors.red.withOpacity(0.3),
+                      child: Text(employeeInfo.name ?? "",
+                        style: Theme.of(context).textTheme.titleMedium?.apply(
+                            color: Colors.white
+                        ),
+                      ),
+                    ),
+                    Container(
+                      //color: Colors.green.withOpacity(0.3),
+                      height: 30,
+                      width: 200,
+                      alignment: isPortrait ? Alignment.topCenter : Alignment.center,
+                      child: Flex(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        direction: Axis.horizontal,
+                        children: [
+                          Flex(
+                            direction: Axis.horizontal,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.coronavirus_outlined,
+                                grade: 1,
+                                weight: 1,
+                                opticalSize: 1,
+                                fill: 0.1,
+                                size: 26,
+                                color: Colors.yellow,
+                              ),
+                              SizedBox(
+                                width: 3,
+                                height: 3,
+                              ),
+                              Text(employeeInfo.bank?.sick.timeLeft ?? "0",
+                                style: Theme.of(context).textTheme.labelLarge?.apply(
+                                    color: Colors.yellow
+                                ),
+                              ),
+                            ],
+                          ),
+                          Flex(
+                            direction: Axis.horizontal,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(Icons.beach_access,
+                                size: 26,
+                                color: Colors.green,
+                              ),
+                              Text(employeeInfo.bank?.vacations.timeLeft ?? "0",
+                                style: Theme.of(context).textTheme.labelLarge?.apply(
+                                    color: Colors.green
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
           ),
           /*actions: [
             Flex(

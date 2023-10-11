@@ -90,6 +90,7 @@ class OroList<T> extends ListBase<T> {
             }
           }
           controller.add(this);
+          controller.close();
         }
       });
     }

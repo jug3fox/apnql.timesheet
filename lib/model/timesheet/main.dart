@@ -1,37 +1,44 @@
 import 'dart:async';
 
+import 'package:apnql_timesheet/model/command/main.dart';
+import 'package:apnql_timesheet/model/main.dart';
 import 'package:flutter/material.dart';
+import '../oro/list/main.dart';
 import 'record.dart';
 import 'package:apnql_timesheet/model/general/date.dart';
 
 
-class TimeSheetDay {
+class TimeSheetDay extends OroList<EmptyTimesheetRecord> {
   StreamController<List<EmptyTimesheetRecord>> controller = StreamController.broadcast();
   Stream<List<EmptyTimesheetRecord>> get stream => controller.stream.distinct((prev, next) {
     bool result = prev.length != next.length;
     return result;
   });
 
+  final int employeeId;
 
   Iterable<Shift> get shiftLeft => Shift.values.where((element) {
-    return !records.map((e) => e.shift?.index).contains(element.index) && element.index != 0;
+    return !map((e) => e.shift?.index).contains(element.index) && element.index != 0;
   }).toList()..sort((a, b) => a.index.compareTo(b.index));
 
   Shift? get newShift => shiftLeft.isEmpty ? null : shiftLeft.first;
 
   TimeSheetDay get copy {
-    TimeSheetDay copyDay = TimeSheetDay(day, records: records.map((e) => e.copy).toList());
+    TimeSheetDay copyDay = TimeSheetDay(day,
+        employeeId: employeeId,
+        records: map((e) => e.copy).toList()
+    );
     return copyDay;
   }
 
   TimeOfDay get hoursWorked {
     int minutes = 0;
-    if (records.length < 2) {
-      if (records.isNotEmpty) {
-        minutes =  records.first.timeOut.difference(records.first.timeIn).inMinutes;
+    if (length < 2) {
+      if (isNotEmpty) {
+        minutes =  first.timeOut.difference(first.timeIn).inMinutes;
       }
     } else {
-      minutes = records.map((e) => e.timeOut.difference(e.timeIn).inMinutes)
+      minutes = map((e) => e.timeOut.difference(e.timeIn).inMinutes)
           .reduce((value, element) => value + element);
     }
 
@@ -39,32 +46,56 @@ class TimeSheetDay {
   }
 
   final DateTime day;
-  final List<EmptyTimesheetRecord> records;
   bool? toCopy;
 
   Future<TimesheetRecord?> add(EmptyTimesheetRecord newRecord) async {
     TimesheetRecord? newTimesheet = await newRecord.addNew();
 
     if (newTimesheet != null) {
-      records.add(newTimesheet);
-      controller.add(records);
+      add(newTimesheet);
+      controller.add(this);
     }
     return newTimesheet;
   }
 
-  Future<TimesheetRecord?> remove(TimesheetRecord newRecord) async {
-    TimesheetRecord? recordsRemoved = await newRecord.remove;
-    records.removeWhere((record) => record is! TimesheetRecord ? false : record.id == recordsRemoved?.id);
-    controller.add(records);
+  remove(dynamic newRecord) async {
+    TimesheetRecord? recordsRemoved = newRecord.remove;
+    removeWhere((record) => record is! TimesheetRecord ? false : record.id == recordsRemoved?.id);
+    controller.add(this);
     return recordsRemoved;
   }
 
-  TimeSheetDay(this.day, {required this.records});
+  TimeSheetDay(this.day, {required this.employeeId, required List<EmptyTimesheetRecord> records}) : super.fromList(newList: records);
+
+  TimeSheetDay.fromOro(this.day, {required this.employeeId}) : super(
+    command: OroCommand(
+        tag: "timesheet_tx_list",
+        commands: [
+          OroCommand(
+              tag: "employee_id",
+              innerText: employeeId.toString()
+          ),
+          OroCommand(
+            tag: "date_from",
+            innerText: day.onlyDate,
+          ),
+          OroCommand(
+            tag: "date_to",
+            innerText: day.onlyDate,
+          ),
+        ]
+    ),
+    builder :(element, {index}) {
+      TimesheetRecord newRecord = TimesheetRecord.fromXmlElement(element: element);
+      newRecord.timeOut.difference(newRecord.timeIn);
+      return newRecord;
+    }
+  );
 
   @override
   String toString() {
     // TODO: implement toString
-    return records.toString();
+    return super.toString();
     return super.toString();
   }
 
