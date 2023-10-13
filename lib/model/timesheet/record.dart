@@ -65,7 +65,12 @@ class EmptyTimesheetRecord {
 
   Duration? get minutes => _timeIn == null || _timeOut == null ? null : _timeOut!.difference(_timeIn!);
 
-  Future<TimesheetRecord?> addNew() async {
+
+  Future<TimesheetRecord?> get remove async {
+    return Future.delayed(Duration(milliseconds: 1)).then((value) => null);
+  }
+
+  Future<TimesheetRecord?> save() async {
     Oro oro = Oro();
     OroCommand command = OroCommand(
         tag: "timesheet_tx_add",
@@ -98,8 +103,7 @@ class EmptyTimesheetRecord {
 
 
     Response getResponse = await oro.send(command);
-
-
+    
     preferences.setInt("prefProject", project!.id);
     preferences.setInt("prefSubProject", subProject!.id);
     preferences.setInt("prefActivity", activity!.id);
@@ -259,7 +263,7 @@ class TimesheetRecord extends EmptyTimesheetRecord {
     return this;
   }
 
-  Future<TimesheetRecord> get save async {
+  Future<TimesheetRecord> save() async {
     Oro oro = Oro();
 
     OroCommand command = OroCommand(

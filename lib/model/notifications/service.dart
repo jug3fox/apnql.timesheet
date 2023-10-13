@@ -30,7 +30,7 @@ class NotificationService {
         AndroidFlutterLocalNotificationsPlugin>()?.requestPermission();
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/main_icon');
 
     final DarwinInitializationSettings initializationSettingsDarwin =
     DarwinInitializationSettings(
@@ -90,7 +90,7 @@ class NotificationService {
       styleInformation: text == null ? null : BigTextStyleInformation(text),
 
       autoCancel: false,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/main_icon',
       ticker: 'ticker',
       color: Colors.red,
     );

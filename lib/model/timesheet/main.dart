@@ -49,7 +49,7 @@ class TimeSheetDay extends OroList<EmptyTimesheetRecord> {
   bool? toCopy;
 
   Future<TimesheetRecord?> add(EmptyTimesheetRecord newRecord) async {
-    TimesheetRecord? newTimesheet = await newRecord.addNew();
+    TimesheetRecord? newTimesheet = await newRecord.save();
 
     if (newTimesheet != null) {
       add(newTimesheet);

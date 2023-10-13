@@ -44,7 +44,7 @@ class OroList<T> extends ListBase<T> {
   add(T element) {
     _list.add(element);
     _addController.add(element);
-    controller.add(this);
+    controller.sink.add(this);
   }
 
   @override
@@ -89,8 +89,8 @@ class OroList<T> extends ListBase<T> {
               );
             }
           }
-          controller.add(this);
-          controller.close();
+
+          controller.sink.add(this);
         }
       });
     }

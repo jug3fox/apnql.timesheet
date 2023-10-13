@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:apnql_timesheet/model/general/date.dart';
 import 'package:xml/xml.dart';
@@ -58,129 +60,344 @@ class _TimesheetMainMenuWidgetState extends State<TimesheetMainMenuWidget> with 
   @override
   Widget build(BuildContext context) {
     bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          menuShow = false;
+        });
+        print("touch");
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomRight,
+        children: [
+          Visibility(
+              visible: menuShow,
+              child: Container(
+                width: 600,
+                height: 600,
+              )
+          ),
+          Visibility(
+              visible: menuShow,
+              child:
+              Positioned(
+                  left: -20,
+                  right: -20,
+                  child: Container(
+                    width: 620,
+                    height: 620,
+                    decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.9),
+                              Colors.black.withOpacity(0)
+                            ],
+                            center: Alignment(1, 0.8),
+                            radius: 1,
+                            stops: [
+                              0.4, 1
+                            ]
+                        )
+                    ),
+                  )
+              ),
+          ),
+          Flex(
+              mainAxisSize: MainAxisSize.min,
+              direction: isPortrait ? Axis.horizontal : Axis.vertical,
+
+              children: [
+                Flex(
+                  direction: Axis.vertical,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        return Visibility(
+                          visible: menuShow,
+                          child: Opacity(
+                            opacity: animation.value,
+                            child: Flex(
+                              direction: Axis.vertical,
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                StreamBuilder(
+                                  stream: widget.currentWeek.status.stream,
+                                  builder: (context, snapshot) {
+                                    WeekStatus? currentStatus = widget.currentWeek.status.status;
+                                    bool isSent = currentStatus != WeekStatus.not_submitted;
+                                    return TimesheetMenuButtonWidget(
+                                      icon: isSent ? Icons.cancel_schedule_send : Icons.send,
+                                      text: isSent ? "Annuler l'envoie" : "Envoyer",
+                                      onClick: widget.currentWeek.status.isLocked ? null : () {
+                                        widget.currentWeek.submit();
+                                      },
+                                    );
+                                  },
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                  height: 10,
+                                ),
+                                ValueListenableBuilder(
+                                  valueListenable: weekCopied,
+                                  builder: (context, value, child) {
+                                    return Flex(
+                                      direction: Axis.vertical,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        TimesheetMenuButtonWidget(
+                                          icon: Icons.copy_all,
+                                          text: "Copier",
+                                          onClick: copyWeek,
+                                        )
+                                        /*Material(
+                          elevation: 4,
+                          color: Theme.of(context).colorScheme.primary,
+
+                          borderRadius: BorderRadius.circular(100),
+                          child: IconButton(
+                            onPressed: copyWeek,
+                            icon: Icon(Icons.copy_all, size: 24, color: Colors.white,)
+                          ),
+                        ),*/,
+                                        const SizedBox(
+                                          width: 10,
+                                          height: 10,
+                                        ),
+                                        TimesheetMenuButtonWidget(
+                                          icon: Icons.paste,
+                                          text: "Coller",
+                                          onClick: weekCopied.value == null || widget.currentWeek.status.isLocked ? null : pasteWeek,
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                const SizedBox(
+                                  width: 5,
+                                  height: 5,
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    FloatingActionButton(
+                      mini: true,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100)
+                      ),
+                      onPressed: menuPopup,
+                      child: Icon(menuShow ? Icons.cancel_outlined : Icons.menu, size: 24, ),
+                    ),
+                  ],
+                ),
+              ]
+          ),
+          Flex(
+            mainAxisSize: MainAxisSize.min,
+            direction: isPortrait ? Axis.horizontal : Axis.vertical,
+
+            children: [
+              Flex(
+                direction: Axis.vertical,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, child) {
+                      return Visibility(
+                        visible: menuShow,
+                        child: Opacity(
+                          opacity: animation.value,
+                          child: Flex(
+                            direction: Axis.vertical,
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              StreamBuilder(
+                                stream: widget.currentWeek.status.stream,
+                                builder: (context, snapshot) {
+                                  WeekStatus? currentStatus = widget.currentWeek.status.status;
+                                  bool isSent = currentStatus != WeekStatus.not_submitted;
+                                  return TimesheetMenuButtonWidget(
+                                    icon: isSent ? Icons.cancel_schedule_send : Icons.send,
+                                    text: isSent ? "Annuler l'envoie" : "Envoyer",
+                                    onClick: widget.currentWeek.status.isLocked ? null : () {
+                                      widget.currentWeek.submit();
+                                    },
+                                  );
+                                },
+                              ),
+                              const SizedBox(
+                                width: 10,
+                                height: 10,
+                              ),
+                              ValueListenableBuilder(
+                                valueListenable: weekCopied,
+                                builder: (context, value, child) {
+                                  return Flex(
+                                    direction: Axis.vertical,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      TimesheetMenuButtonWidget(
+                                        icon: Icons.copy_all,
+                                        text: "Copier",
+                                        onClick: copyWeek,
+                                      )
+                                      /*Material(
+                              elevation: 4,
+                              color: Theme.of(context).colorScheme.primary,
+
+                              borderRadius: BorderRadius.circular(100),
+                              child: IconButton(
+                                onPressed: copyWeek,
+                                icon: Icon(Icons.copy_all, size: 24, color: Colors.white,)
+                              ),
+                            ),*/,
+                                      const SizedBox(
+                                        width: 10,
+                                        height: 10,
+                                      ),
+                                      TimesheetMenuButtonWidget(
+                                        icon: Icons.paste,
+                                        text: "Coller",
+                                        onClick: weekCopied.value == null || widget.currentWeek.status.isLocked ? null : pasteWeek,
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                              const SizedBox(
+                                width: 5,
+                                height: 5,
+                              ),
+
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  FloatingActionButton(
+                    mini: true,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100)
+                    ),
+                    onPressed: menuPopup,
+                    child: Icon(menuShow ? Icons.cancel_outlined : Icons.menu, size: 24, ),
+                  ),
+                ],
+              ),
+            ],
+          )
+        ],
+      ),
+    );
     return Flex(
       mainAxisSize: MainAxisSize.min,
       direction: isPortrait ? Axis.horizontal : Axis.vertical,
 
       children: [
-        SizedBox(
-          child: Flex(
-            direction: Axis.vertical,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: animation,
-                builder: (context, child) {
-                  return Visibility(
-                    visible: false || menuShow,
-                    child: Opacity(
-                      opacity: animation.value,
-                      child: Container(
-                        //color: Colors.orange.withOpacity(0.2),
-                        child: Flex(
-                          direction: Axis.vertical,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            StreamBuilder(
-                              stream: widget.currentWeek.status.stream,
-                              builder: (context, snapshot) {
-                                WeekStatus? currentStatus = widget.currentWeek.status.status;
-                                bool isSent = currentStatus != WeekStatus.not_submitted;
-                                return TimesheetMenuButtonWidget(
-                                  icon: isSent ? Icons.cancel_schedule_send : Icons.send,
-                                  text: isSent ? "Annuler l'envoie" : "Envoyer",
-                                  onClick: widget.currentWeek.status.isLocked ? null : () {
-                                    widget.currentWeek.submit();
-                                  },
-                                );
-                                return Material(
+        Flex(
+          direction: Axis.vertical,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Visibility(
+                  visible: false || menuShow,
+                  child: Opacity(
+                    opacity: animation.value,
+                    child: Flex(
+                      direction: Axis.vertical,
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        StreamBuilder(
+                          stream: widget.currentWeek.status.stream,
+                          builder: (context, snapshot) {
+                            WeekStatus? currentStatus = widget.currentWeek.status.status;
+                            bool isSent = currentStatus != WeekStatus.not_submitted;
+                            return TimesheetMenuButtonWidget(
+                              icon: isSent ? Icons.cancel_schedule_send : Icons.send,
+                              text: isSent ? "Annuler l'envoie" : "Envoyer",
+                              onClick: widget.currentWeek.status.isLocked ? null : () {
+                                widget.currentWeek.submit();
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(
+                          width: 10,
+                          height: 10,
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: weekCopied,
+                          builder: (context, value, child) {
+                            return Flex(
+                              direction: Axis.vertical,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                TimesheetMenuButtonWidget(
+                                  icon: Icons.copy_all,
+                                  text: "Copier",
+                                  onClick: copyWeek,
+                                )
+                                /*Material(
                                   elevation: 4,
                                   color: Theme.of(context).colorScheme.primary,
 
                                   borderRadius: BorderRadius.circular(100),
                                   child: IconButton(
-                                    onPressed:  widget.currentWeek.status.isLocked ? null : () {
-                                      widget.currentWeek.submit();
-                                    },
-                                    icon: Icon(isSent ? Icons.cancel_schedule_send : Icons.send, size: 24, color: Colors.white,),
-                                    splashColor: Colors.orange,
+                                    onPressed: copyWeek,
+                                    icon: Icon(Icons.copy_all, size: 24, color: Colors.white,)
                                   ),
-                                );
-                              },
-                            ),
-                            SizedBox(
-                              width: 10,
-                              height: 10,
-                            ),
-                            ValueListenableBuilder(
-                              valueListenable: weekCopied,
-                              builder: (context, value, child) {
-                                return Flex(
-                                  direction: Axis.vertical,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    TimesheetMenuButtonWidget(
-                                      icon: Icons.copy_all,
-                                      text: "Copier",
-                                      onClick: copyWeek,
-                                    )
-                                    /*Material(
-                                      elevation: 4,
-                                      color: Theme.of(context).colorScheme.primary,
-
-                                      borderRadius: BorderRadius.circular(100),
-                                      child: IconButton(
-                                        onPressed: copyWeek,
-                                        icon: Icon(Icons.copy_all, size: 24, color: Colors.white,)
-                                      ),
-                                    ),*/,
-                                    SizedBox(
-                                      width: 10,
-                                      height: 10,
-                                    ),
-                                    TimesheetMenuButtonWidget(
-                                      icon: Icons.paste,
-                                      text: "Coller",
-                                      onClick: weekCopied.value == null || widget.currentWeek.status.isLocked ? null : pasteWeek,
-                                    ),
-                                    /*Material(
-                                      elevation: 4,
-                                      color: Theme.of(context).colorScheme.primary,
-
-                                      borderRadius: BorderRadius.circular(100),
-                                      child: IconButton(
-                                        onPressed: weekCopied.value == null || widget.currentWeek.status.isLocked ? null : pasteWeek,
-                                        icon: Icon(Icons.paste, size: 24, color: Colors.white.withOpacity(weekCopied.value == null ? 0.5 : 1),)
-                                      ),
-                                    )*/
-                                  ],
-                                );
-                              },
-                            ),
-                            SizedBox(
-                              width: 5,
-                              height: 5,
-                            ),
-
-                          ],
+                                ),*/,
+                                const SizedBox(
+                                  width: 10,
+                                  height: 10,
+                                ),
+                                TimesheetMenuButtonWidget(
+                                  icon: Icons.paste,
+                                  text: "Coller",
+                                  onClick: weekCopied.value == null || widget.currentWeek.status.isLocked ? null : pasteWeek,
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                      ),
+                        const SizedBox(
+                          width: 5,
+                          height: 5,
+                        ),
+
+                      ],
                     ),
-                  );
-                },
+                  ),
+                );
+              },
+            ),
+            FloatingActionButton(
+              mini: true,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100)
               ),
-              FloatingActionButton(
-                mini: true,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100)
-                ),
-                onPressed: menuPopup,
-                child: Icon(menuShow ? Icons.cancel_outlined : Icons.menu, size: 24, ),
-              ),
-            ],
-          ),
-        )
+              onPressed: menuPopup,
+              child: Icon(menuShow ? Icons.cancel_outlined : Icons.menu, size: 24, ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -263,7 +480,7 @@ class _TimesheetMenuButtonWidgetState extends State<TimesheetMenuButtonWidget> {
   Widget build(BuildContext context) {
     return Container(
       height: 32,
-      decoration: BoxDecoration(
+      decoration: true ? null : BoxDecoration(
         border: Border.all(
           color: Colors.white.withOpacity(0.5),
           width: 3,
@@ -283,6 +500,7 @@ class _TimesheetMenuButtonWidgetState extends State<TimesheetMenuButtonWidget> {
           opacity: widget.onClick == null ? 0.3 : 1,
           child: Flex(
             direction: Axis.horizontal,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(widget.text),
               SizedBox(

@@ -461,12 +461,12 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
       isSaving = true;
     });
     if (widget.record is! TimesheetRecord) {
-      widget.record.addNew().then((value) {
+      widget.record.save().then((value) {
         widget.week.add(value!);
         Navigator.pop(context);
       });
     } else {
-      (widget.record as TimesheetRecord).save.then((value) {
+      (widget.record as TimesheetRecord).save().then((value) {
         widget.record.controller.add(widget.record);
         widget.week.controller.add(widget.week);
         Navigator.pop(context);
