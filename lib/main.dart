@@ -74,7 +74,17 @@ class _OroTimesheetAppState extends State<OroTimesheetApp> {
           dialogBackgroundColor: Color.lerp(Colors.white, Colors.black, 0.5),
           appBarTheme: AppBarTheme(
               centerTitle: true
+          ),
+        buttonTheme: ButtonThemeData(
+          disabledColor: Colors.red
+        ),
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.resolveWith((result) {
+              return result.contains(MaterialState.disabled) ? Colors.blue : null;
+            })
           )
+        )
       ),
       home: id != null ? EmployeeInfoPage(id) : const EmployeesWidget(),
     );

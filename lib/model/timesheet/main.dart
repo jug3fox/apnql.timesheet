@@ -34,12 +34,14 @@ class TimeSheetDay extends OroList<EmptyTimesheetRecord> {
   TimeOfDay get hoursWorked {
     int minutes = 0;
     if (length < 2) {
-      if (isNotEmpty) {
-        minutes =  first.timeOut.difference(first.timeIn).inMinutes;
+      if (isNotEmpty && first.timeOut != null) {
+        minutes =  first.timeOut!.difference(first.timeIn).inMinutes;
       }
     } else {
-      minutes = map((e) => e.timeOut.difference(e.timeIn).inMinutes)
-          .reduce((value, element) => value + element);
+      minutes = map((e) {
+        if (e.timeOut == null) return 0;
+        return e.timeOut!.difference(e.timeIn).inMinutes;
+      }).reduce((value, element) => value + element);
     }
 
     return TimeOfDay(hour: (minutes / 60).floor(), minute: minutes % 60);
@@ -66,6 +68,31 @@ class TimeSheetDay extends OroList<EmptyTimesheetRecord> {
   }
 
   TimeSheetDay(this.day, {required this.employeeId, required List<EmptyTimesheetRecord> records}) : super.fromList(newList: records);
+
+  TimeSheetDay.today({required this.employeeId}) : day = DateTime.now(), super(
+      command: OroCommand(
+          tag: "timesheet_tx_list",
+          commands: [
+            OroCommand(
+                tag: "employee_id",
+                innerText: employeeId.toString()
+            ),
+            OroCommand(
+              tag: "date_from",
+              innerText: DateTime.now().onlyDate,
+            ),
+            OroCommand(
+              tag: "date_to",
+              innerText: DateTime.now().onlyDate,
+            ),
+          ]
+      ),
+      builder :(element, {index}) {
+        TimesheetRecord newRecord = TimesheetRecord.fromXmlElement(element: element);
+        newRecord.timeOut.difference(newRecord.timeIn);
+        return newRecord;
+      }
+  );
 
   TimeSheetDay.fromOro(this.day, {required this.employeeId}) : super(
     command: OroCommand(

@@ -65,7 +65,6 @@ class _TimesheetMainMenuWidgetState extends State<TimesheetMainMenuWidget> with 
         setState(() {
           menuShow = false;
         });
-        print("touch");
       },
       child: Stack(
         clipBehavior: Clip.none,
@@ -74,19 +73,19 @@ class _TimesheetMainMenuWidgetState extends State<TimesheetMainMenuWidget> with 
           Visibility(
               visible: menuShow,
               child: Container(
-                width: 600,
-                height: 600,
+                width: 1200,
+                height: 1200,
               )
           ),
           Visibility(
               visible: menuShow,
               child:
               Positioned(
-                  left: -20,
+                  bottom: -20,
                   right: -20,
                   child: Container(
-                    width: 620,
-                    height: 620,
+                    width: 1200,
+                    height: 1200,
                     decoration: BoxDecoration(
                         gradient: RadialGradient(
                             colors: [
@@ -96,7 +95,7 @@ class _TimesheetMainMenuWidgetState extends State<TimesheetMainMenuWidget> with 
                             center: Alignment(1, 0.8),
                             radius: 1,
                             stops: [
-                              0.4, 1
+                              0.2, 0.5
                             ]
                         )
                     ),
@@ -444,7 +443,6 @@ class _TimesheetMainMenuWidgetState extends State<TimesheetMainMenuWidget> with 
         XmlDocument root = XmlDocument.parse(value.body);
         XmlNode? result = root.firstChild;
         XmlElement element = result!.firstElementChild!;
-        print(root);
         TimesheetRecord newRecord = TimesheetRecord.fromBase(id: int.parse(element.innerText), date: newDate, record: record);
         return newRecord;
       }));

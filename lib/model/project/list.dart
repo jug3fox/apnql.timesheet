@@ -49,7 +49,6 @@ class SubProject {
   SubProject.fromXmlElement(this.element, this.parent) :
         subType = element.getElement("description")!.innerText.toSubProject,
         name = element.getElement("description")!.innerText {
-    print("element: ${element}");
     id = int.parse(element.getElement("${this is! Project ? "sub_" : ""}project_id")!.innerText);
   }
 

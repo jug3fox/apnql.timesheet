@@ -11,6 +11,7 @@ import '../../../model/timesheet/record.dart';
 
 class TimeSheetDayWidget extends StatefulWidget {
   //final double minStart, maxEnd;
+  final PunchTimesheetRecord? punchRecord;
   final WeekStatus? status;
   final EditionMode mode;
   final RangeValues range;
@@ -21,6 +22,7 @@ class TimeSheetDayWidget extends StatefulWidget {
   final DateTime day;
   final ScrollController controller;
   const TimeSheetDayWidget({
+    this.punchRecord,
     required this.controller,
     required this.mode,
     required this.range,
@@ -61,7 +63,6 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
     
     hoursWidget = DayHoursWidget(
         children: List.generate(24, (hour) {
-          print("refresh : ${widget.timeSheetDay == null}");
           return DayHourWidget(
               week: widget.week,
               day: widget.day,
@@ -213,6 +214,10 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.punchRecord != null) {
+
+      print("widget time update3: ${widget.punchRecord?.timeOut}");
+    }
     DateTime day = widget.day;
     TimeSheetDay? timeSheetDay = widget.week.days[day];
     bool isWeekend = day.weekday > 5;
@@ -257,6 +262,20 @@ class _TimeSheetDayWidgetState extends State<TimeSheetDayWidget> {
                         if (_newRecord == null) return Container();
                         return TimesheetRecordWidget(
                             record: _newRecord!,
+                            week: widget.week,
+                            status: widget.status,
+                            day: widget.timeSheetDay!,
+                            size: widget.realSize
+                        );
+                        return Container();
+                      },
+                    ),
+                    StreamBuilder(
+                      stream: widget.punchRecord?.timeStream,
+                      builder: (context, snapshot) {
+                        if (widget.punchRecord == null) return Container();
+                        return TimesheetRecordWidget(
+                            record: widget.punchRecord!,
                             week: widget.week,
                             status: widget.status,
                             day: widget.timeSheetDay!,
@@ -467,9 +486,7 @@ class _DayHourWidgetState extends State<DayHourWidget> {
           late Shift shift = Shift.avantMidi;
           if (widget.index < 13) {
             shift = Shift.avantMidi;
-            print("am");
           } else {
-            print("pm");
             shift = Shift.apresMidi;
           }
 

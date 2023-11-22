@@ -1,4 +1,5 @@
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:apnql_timesheet/main.dart';
 import 'package:apnql_timesheet/model/general/date.dart';
@@ -39,8 +40,12 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
     return StreamBuilder(
         stream: widget.record.timeStream,
         builder: (context, snapshot) {
+          if (widget.record is PunchTimesheetRecord) {
+            print("widget time update4: ${widget.record.timeOut}");
+          }
+          if (widget.record.timeOut == null) return Container();
           double hourPercentIn = ((widget.record.timeIn.hour + (widget.record.timeIn.minute / 60)) / 24);
-          double hourPercentOut = ((widget.record.timeOut.hour + (widget.record.timeOut.minute / 60)) / 24); // From 6 to 20 hour
+          double hourPercentOut = ((widget.record.timeOut!.hour + (widget.record.timeOut!.minute / 60)) / 24); // From 6 to 20 hour
 
 
           return Positioned(
@@ -50,15 +55,20 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
             bottom: isPortrait ? 0 : (1 - hourPercentOut ) * (widget.size.height) + 1,
             child: Container(
                 alignment: Alignment.center,
-                //color: Colors.green.withOpacity(0.3),
-                child: Container(
+                //color: widget.record is PunchTimesheetRecord ? Colors.red.withOpacity(0.8) : null,
+                child: SizedBox(
                   width: double.infinity,
                   child: Card(
+                    clipBehavior: Clip.hardEdge,
                     margin: EdgeInsets.symmetric(horizontal: isPortrait ? 0 : 5, vertical: 0),
-                    color: Color.lerp(widget.status.color, Colors.black, (widget.record.shift?.index ?? 0) / 4),
+                    color: Color.lerp(
+                        widget.record is PunchTimesheetRecord ? Colors.red : widget.status.color,
+                        Colors.black,
+                        (widget.record.shift?.index ?? 0) / 4
+                    ),
                     shape: RoundedRectangleBorder( //<-- SEE HERE
                       borderRadius: BorderRadius.circular(15),
-                      side: BorderSide(
+                      side: const BorderSide(
                         color: Colors.black,
                         width: 2
                       ),
@@ -69,8 +79,9 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                         alignment: Alignment.center,
                         children: [
                           MaterialButton(
+                            visualDensity: VisualDensity.compact,
                             onPressed: () {
-                              print("tapped");
+                              if (widget.record is PunchTimesheetRecord) return;
                               showDialog(
                                 context: context,
                                 builder: (context) => TimesheetRecordDialog(
@@ -81,15 +92,19 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                               );
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 2),
+                              padding: EdgeInsets.symmetric(vertical: 5),
                               alignment: isPortrait ? null : Alignment.center,
-                              child: Flex(
+                              child: (widget.record.timeIn.difference(widget.record.timeOut!).inMinutes.abs() < 120) &&
+                                  widget.record is! PunchTimesheetRecord ? Container() : Flex(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
                                 direction: widget.record.date.weekday > 5 ? Axis.horizontal : Axis.vertical,
                                 children: [
-                                  Text(widget.record.timeIn.show,
+                                  AutoSizeText(widget.record.timeIn.show,
                                     textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    minFontSize: 7,
+                                    maxFontSize: 30,
                                     style: Theme.of(context).textTheme.labelMedium?.apply(
                                         color: Colors.white,
                                         fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
@@ -103,8 +118,11 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                                         fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
                                     ),
                                   ) : Container(),
-                                  Text(widget.record.timeOut.show,
+                                  AutoSizeText(widget.record.timeOut!.show,
                                     textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    minFontSize: 7,
+                                    maxFontSize: 30,
                                     style: Theme.of(context).textTheme.labelMedium?.apply(
                                         color: Colors.white,
                                         fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
@@ -114,57 +132,11 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                               ),
                             ),
                           ),
-                          /*GestureDetector(
-                            onTap: widget.status.isFullLocked ? null : () {
-                              print("tapped");
-                              showDialog(
-                                context: context,
-                                builder: (context) => TimesheetRecordDialog(
-                                  record: widget.record,
-                                  day: widget.day,
-                                  week: widget.week,
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 2),
-                              alignment: isPortrait ? null : Alignment.center,
-                              child: Flex(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                direction: widget.record.date.weekday > 5 ? Axis.horizontal : Axis.vertical,
-                                children: [
-                                  Text(widget.record.timeIn.show,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.labelMedium?.apply(
-                                        color: Colors.white,
-                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
-                                    ),
-                                  ),
-                                  widget.record.date.weekday > 5 ?
-                                  Text("-",
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.labelMedium?.apply(
-                                        color: Colors.white,
-                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
-                                    ),
-                                  ) : Container(),
-                                  Text(widget.record.timeOut.show,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.labelMedium?.apply(
-                                        color: Colors.white,
-                                        fontStyle: widget.status.isFullLocked ? FontStyle.italic : null
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),*/
 
-                          widget.record is TimesheetRecord ? Positioned(
+                          Positioned(
                             left: isPortrait ? 3 : null,
                             top: isPortrait ? null : 3,
-                            child: Draggable(
+                            child: widget.record is TimesheetRecord ? Draggable(
                               onDragStarted: () {
                                 if (widget.dragChange != null) widget.dragChange!(true);
                               },
@@ -176,11 +148,11 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                                 record: widget.record as TimesheetRecord,
                               ),
                               feedback: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(50),
-                                  color: Colors.black.withOpacity(0.4),
-                                ),
-                                padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.black.withOpacity(0.4),
+                                  ),
+                                  padding: EdgeInsets.all(4),
                                   child: RotatedBox(
                                     quarterTurns: isPortrait ? 0 : 1,
                                     child: Icon(Icons.sync_alt, color: Color.lerp(Colors.black, Colors.green, 1),),
@@ -190,12 +162,12 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                                 quarterTurns: isPortrait ? 0 : 1,
                                 child: Icon(Icons.first_page, size: 16, color: Colors.white,),
                               ),
-                            ),
-                          ) : Container(),
-                          widget.record is TimesheetRecord ? Positioned(
+                            ) : Container(),
+                          ),
+                          Positioned(
                             right: isPortrait ? 3 : null,
                             bottom: isPortrait ? null : 3,
-                            child: Draggable(
+                            child:  widget.record is TimesheetRecord ? Draggable(
                               onDragStarted: () {
                                 if (widget.dragChange != null) widget.dragChange!(true);
                               },
@@ -207,23 +179,23 @@ class _TimesheetRecordWidgetState extends State<TimesheetRecordWidget> {
                                 record: widget.record as TimesheetRecord,
                               ),
                               feedback: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(50),
-                                  color: Colors.black.withOpacity(0.4),
-                                ),
-                                padding: EdgeInsets.all(4),
-                                child: RotatedBox(
-                                  quarterTurns: isPortrait ? 0 : 1,
-                                  child: Icon(Icons.sync_alt, color: Color.lerp(Colors.black, Colors.green, 1),),
-                                )
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(50),
+                                    color: Colors.black.withOpacity(0.4),
+                                  ),
+                                  padding: EdgeInsets.all(4),
+                                  child: RotatedBox(
+                                    quarterTurns: isPortrait ? 0 : 1,
+                                    child: Icon(Icons.sync_alt, color: Color.lerp(Colors.black, Colors.green, 1),),
+                                  )
                               ),
 
                               child: RotatedBox(
                                 quarterTurns: isPortrait ? 0 : 1,
                                 child: Icon(Icons.last_page, size: 16, color: Colors.white,),
                               ),
-                            ),
-                          ) : Container(),
+                            ) : Container(),
+                          ),
                         ],
                       ),
                     ),
@@ -248,6 +220,10 @@ class TimesheetRecordDialog extends StatefulWidget {
 
 class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
   bool isSaving = false;
+
+  final bool showActivities = false;
+
+  TextEditingController notesController = TextEditingController();
 
   @override
   void initState() {
@@ -295,6 +271,7 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                         TimeButtonWidget(
                           title: "Entrée",
                           time: widget.record.timeIn,
+                          padding: EdgeInsets.all(-5).add(EdgeInsets.only(top: 3)),
                           onChange: (newTime) {
                             widget.record.timeIn = newTime;
                           },
@@ -302,7 +279,8 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                         const SizedBox(width: 20, height: 20,),
                         TimeButtonWidget(
                           title: "Sortie",
-                          time: widget.record.timeOut,
+                          padding: EdgeInsets.all(-5).add(EdgeInsets.only(top: 3)),
+                          time: widget.record.timeOut ?? widget.record.timeIn,
                           onChange: (newTime) {
                             widget.record.timeOut = newTime;
                           },
@@ -313,7 +291,7 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                       bgColor: Colors.blue.withOpacity(0.2),
                       title: "Quart d${widget.record.shift?.name.isVowel == true ? "'" : "e "}${widget.record.shift?.name}",
                       titleAlignment: TextAlign.center,
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(2),
                       child: TimesheetShiftsWidget(
                         shift: widget.record.shift,
                         onChange: (newShift) {
@@ -326,14 +304,14 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                   ],
                 ),
                 Container(
-                  height: isPortrait ? 220 : null,
+                  height: null,
                   child: Flex(
                     direction: isPortrait ? Axis.vertical : Axis.horizontal,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: GroupBoxWidget(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      GroupBoxWidget(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                             margin: const EdgeInsets.all(5),
                             bgColor: Colors.white.withOpacity(0.1),
                             title: "Catégorie (Projet)",
@@ -341,6 +319,7 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                                 underline: Container(),
                                 dropdownColor: Color.lerp(Colors.black, Colors.white, 0.3),
                                 isExpanded: true,
+                                isDense: true,
                                 items: projects.map((project) {
                                   return DropdownMenuItem(
                                     value: project,
@@ -360,15 +339,14 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                                 }
                             )
                         ),
-                      ),
-                      Expanded(
-                        child: (widget.record.project?.subProjects ?? []).length < 2 ? Container () :
+                        (widget.record.project?.subProjects ?? []).length < 2 ? Container () :
                         GroupBoxWidget(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           margin: const EdgeInsets.all(5),
                           bgColor: Colors.white.withOpacity(0.1),
                           title: "Sous-projet",
                           child: DropdownButton(
+                            isDense: true,
                               underline: Container(),
                               dropdownColor: Color.lerp(Colors.black, Colors.white, 0.3),
                               isExpanded: true,
@@ -390,14 +368,13 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                               }
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: GroupBoxWidget(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                      showActivities ? GroupBoxWidget(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           margin: const EdgeInsets.all(5),
                           bgColor: Colors.white.withOpacity(0.1),
                           title: "Activité",
                           child: DropdownButton(
+                            isDense: true,
                               underline: Container(),
                               dropdownColor: Color.lerp(Colors.black, Colors.white, 0.3),
                               isExpanded: true,
@@ -418,11 +395,22 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
                                 });
                               }
                           ),
-                        ),
-                      )
+                      ) : Container()
                     ],
                   ),
                 ),
+                TextFormField(
+                  textCapitalization: TextCapitalization.sentences,
+                  initialValue: widget.record.notes,
+                  minLines: 1,
+                  maxLines: 4,
+                  style: TextStyle(
+                    color: Colors.white
+                  ),
+                  onChanged: (newValue) {
+                    widget.record.notes = newValue;
+                  },
+                )
               ],
             );
           },
@@ -466,7 +454,7 @@ class _TimesheetRecordDialogWidgetState extends State<TimesheetRecordDialog> {
         Navigator.pop(context);
       });
     } else {
-      (widget.record as TimesheetRecord).save().then((value) {
+      widget.record.save().then((value) {
         widget.record.controller.add(widget.record);
         widget.week.controller.add(widget.week);
         Navigator.pop(context);

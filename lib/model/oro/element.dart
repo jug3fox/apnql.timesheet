@@ -38,7 +38,6 @@ class OroElement<T> {
     parent.send(command).then((value) {
       XmlDocument root = XmlDocument.parse(value.body);
       XmlNode? result = root.firstChild;
-      //log(result.toString());
       if (result?.firstElementChild != null && builder != null) {
         element = result!.firstElementChild!;
         if (element?.localName == "error") {

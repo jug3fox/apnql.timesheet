@@ -27,7 +27,6 @@ class _TimesheetRecordAddPageState extends State<TimesheetRecordAddPage> {
     return GestureDetector(
       onHorizontalDragEnd: (details) {
         if ((details.primaryVelocity ?? 0) > 100) Navigator.pop(context);
-        print("details: ${details.primaryVelocity}");
       },
       child: WearShapeWidget(
           Scaffold(
@@ -159,7 +158,7 @@ class _TimesheetRecordAddWidgetState extends State<TimesheetRecordAddWidget> {
                     widget.record.timeOut = newTime;
                   });
                 },
-                time: widget.record.timeOut,
+                time: widget.record.timeOut ?? widget.record.timeIn,
                 title: 'Out',
                 padding: EdgeInsets.all(-10),
               )

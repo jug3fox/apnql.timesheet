@@ -1,6 +1,7 @@
 
 import 'dart:math';
 
+import 'package:apnql_timesheet/model/timesheet/record.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:apnql_timesheet/main.dart';
@@ -13,6 +14,7 @@ import 'day.dart';
 
 class TimeSheetWidget extends StatefulWidget {
   final TimesheetWeek sheetWeek;
+  final PunchTimesheetRecord? punchRecord;
   final int employeeId;
   final Size realSize;
   final RangeValues range;
@@ -23,6 +25,7 @@ class TimeSheetWidget extends StatefulWidget {
   final List<TimeSheetDay>? dataInClipBoard;
   const TimeSheetWidget(this.sheetWeek, {
     required this.employeeId,
+    this.punchRecord,
     required this.controller,
     required this.realSize,
     required this.range,
@@ -42,6 +45,8 @@ class _TimeSheetWidgetState extends State<TimeSheetWidget> with AutomaticKeepAli
 
   late final TimesheetWeek timesheetWeek;
 
+  int prevLen = 0;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -53,6 +58,10 @@ class _TimeSheetWidgetState extends State<TimeSheetWidget> with AutomaticKeepAli
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (widget.punchRecord != null) {
+
+      print("widget time update2: ${widget.punchRecord?.timeOut}");
+    }
     bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     return Scaffold(
       body: Container(
@@ -119,6 +128,9 @@ class _TimeSheetWidgetState extends State<TimeSheetWidget> with AutomaticKeepAli
                                         isLoading: isLoading,
                                         key: Key(day.key.onlyDate),
                                         mode: mode,
+                                        punchRecord: widget.punchRecord == null ? null :
+                                          widget.punchRecord!.date.difference(day.key).inDays == 0
+                                              && widget.punchRecord!.date.day == day.key.day ? widget.punchRecord : null,
                                         range: widget.range,
                                         status: timesheetWeek.status.status,
                                         day: day.key,
@@ -163,7 +175,7 @@ class _TimeSheetWidgetState extends State<TimeSheetWidget> with AutomaticKeepAli
 
   @override
   // TODO: implement wantKeepAlive
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => true;//prevLen != widget.sheetWeek.length;
 }
 
 class LoadingIconWidget extends StatefulWidget {

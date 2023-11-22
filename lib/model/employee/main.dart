@@ -79,7 +79,6 @@ class EmployeeInfo extends OroElement<EmployeeInfo> with OroEmployeeBase {
     OroListEmployees list = OroListEmployees();
     Iterable<OroEmployee> result = await list.stream.first;
     result = result.where((element) => element.email == email);
-    print("result : $result");
     if (result.isNotEmpty) {
       return EmployeeInfo(result.first.id);
     }

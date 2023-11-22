@@ -10,7 +10,6 @@ import '../timesheet/list.dart';
 
 
 void onDidReceiveBackgroundNotificationResponse(NotificationResponse response) {
-  print("bg reponse: ${response.actionId}");
 
   if (notifications.onClick != null && response.id != null) {
     notifications.onClick!(response.id!);
@@ -59,11 +58,9 @@ class NotificationService {
 
   void onDidReceiveLocalNotification(
       int id, String? title, String? body, String? payload) {
-    print('idd $id');
   }
 
   void onDidReceiveNotificationResponse(NotificationResponse response) {
-    print("reponse: ${response.id}");
     if (onClick != null && response.id != null) {
       onClick!(response.id!);
     }

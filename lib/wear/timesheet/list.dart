@@ -58,7 +58,6 @@ class _ListDaysWidgetState extends State<ListDaysWidget> with AutomaticKeepAlive
               return FloatingActionButton(
                 mini: true,
                 onPressed: _currentPage == 100 ? null : () {
-                  print(_currentPage);
                   dayController.animateToPage(100,
                       duration: Duration(milliseconds: 500 + 100 * (_currentPage.value - 100).abs().toInt()),
                       curve: Curves.easeOut
@@ -146,7 +145,7 @@ class _WatchTimesheetDayWidgetState extends State<WatchTimesheetDayWidget> with 
                                             child: Icon(record.project?.type.icon, size: 18,),
                                           ),
                                           Expanded(
-                                            child: Text("${record.timeIn.show} - ${record.timeOut.show}",
+                                            child: Text("${record.timeIn.show} - ${record.timeOut!.show}",
                                               textAlign: TextAlign.center,
                                               style: Theme.of(context).textTheme.labelMedium?.apply(
                                                   fontSizeDelta: 4

@@ -16,7 +16,34 @@ import '../activity/main.dart';
 import '../command/main.dart';
 import '../main.dart';
 
-class EmptyTimesheetRecord {
+class PunchTimesheetRecord extends EmptyTimesheetRecord {
+  final DateTime punchIn;
+  Duration get countdown => DateTime.now().difference(punchIn);
+  String get label {
+    if (countdown.inMinutes < 10) {
+      return "${NumberFormat("00").format(countdown.inMinutes % 60)}"
+          ":${NumberFormat("00").format(countdown.inMinutes % 60)}"
+          ".${NumberFormat("00").format(countdown.inSeconds % 60)}";
+    }
+    return "${NumberFormat("00").format(countdown.inHours % 60)}:${NumberFormat("00").format(countdown.inMinutes % 60)}";
+  }
+  late final Timer timer;
+
+  PunchTimesheetRecord({
+      super.shift,
+      super.parent,
+    DateTime? punchIn,
+  }) : punchIn = punchIn ?? DateTime.now(),
+  super(DateTime.now(),
+    timeIn: (punchIn ?? DateTime.now()).timeOfDay
+  ) {
+    timer = Timer.periodic(Duration(seconds: 1), (tick) {
+      super.timeOut = DateTime.now().timeOfDay;
+    });
+  }
+}
+
+class EmptyTimesheetRecord<T> {
   final StreamController<EmptyTimesheetRecord> controller = StreamController.broadcast();
   Stream<EmptyTimesheetRecord> get stream => controller.stream;
   Stream<String> get timeStream => controller.stream.map((event) => "${event._timeIn}-${event._timeOut}").distinct();
@@ -34,7 +61,8 @@ class EmptyTimesheetRecord {
   covariant SubProject? subProject;
   covariant Activity? activity;
 
-  final DateTime date;
+  DateTime _date;
+  DateTime get date => _date;
 
   covariant TimeOfDay? _timeIn, _timeOut;
 
@@ -44,14 +72,20 @@ class EmptyTimesheetRecord {
     controller.add(this);
   }
 
-  TimeOfDay get timeOut => _timeOut ?? TimeOfDay(hour: 0, minute: 0);
-  set timeOut(TimeOfDay newTime) {
+  TimeOfDay? get timeOut => _timeOut ?? TimeOfDay(hour: 0, minute: 0);
+  set timeOut(TimeOfDay? newTime) {
     _timeOut = newTime;
     controller.add(this);
   }
 
   DateTime get timeInDate => DateTime(date.year, date.month, date.day, timeIn.hour, timeIn.minute);
-  DateTime get timeOutDate => DateTime(date.year, date.month, date.day, timeOut.hour, timeOut.minute);
+
+  DateTime? get timeOutDate {
+    if (timeOut != null) {
+      DateTime result = DateTime(date.year, date.month, date.day, timeOut!.hour, timeOut!.minute);
+    }
+    return null;
+  }
 
   set time(MapEntry<TimeOfDay?, TimeOfDay?> newValue) {
     if (newValue.key != null) {
@@ -70,18 +104,21 @@ class EmptyTimesheetRecord {
     return Future.delayed(Duration(milliseconds: 1)).then((value) => null);
   }
 
-  Future<TimesheetRecord?> save() async {
+  Future<TimesheetRecord> save([DateTime? newDate]) async {
+    assert(timeOut != null);
+
     Oro oro = Oro();
     OroCommand command = OroCommand(
         tag: "timesheet_tx_add",
         commands: [
           OroCommand(tag: "sub_project_id", innerText: subProject!.id.toString()),
-          OroCommand(tag: "date", innerText: DateFormat("yyyy-MM-dd").format(date)),
+          OroCommand(tag: "date", innerText: DateFormat("yyyy-MM-dd").format(newDate ?? date)),
+          OroCommand(tag: "notes", innerText: notes),
           OroCommand(tag: "activity_type_id", innerText: activity!.id.toString()),
           OroCommand(tag: "shift", innerText: (shift?.index ?? 1).toString()),
           OroCommand(tag: "time_in", innerText: timeIn.show),
-          OroCommand(tag: "time_out", innerText: timeOut.show),
-          OroCommand(tag: "minutes", innerText: timeOut.difference(timeIn).inMinutes.toString()),
+          OroCommand(tag: "time_out", innerText: timeOut!.show),
+          OroCommand(tag: "minutes", innerText: timeOut!.difference(timeIn).inMinutes.toString()),
           OroCommand(tag: "employee_id", innerText: preferences.getInt("employee_id").toString()),
         ]
     );
@@ -103,30 +140,26 @@ class EmptyTimesheetRecord {
 
 
     Response getResponse = await oro.send(command);
-    
+
     preferences.setInt("prefProject", project!.id);
     preferences.setInt("prefSubProject", subProject!.id);
     preferences.setInt("prefActivity", activity!.id);
 
     root = XmlDocument.parse(getResponse.body);
     result = root.firstChild;
-    //log(result.toString());
-    if (result?.firstElementChild != null) {
-      TimesheetRecord newRecord = TimesheetRecord.fromXmlElement(element: result!.firstElementChild!);
-      _addController.add(newRecord);
-      return newRecord;
-    }
+    TimesheetRecord newRecord = TimesheetRecord.fromXmlElement(element: result!.firstElementChild!);
 
-    return null;
+    _addController.add(newRecord);
+    return newRecord;
   }
 
-  EmptyTimesheetRecord(this.date, {
+  EmptyTimesheetRecord(DateTime date, {
     this.shift,
     TimeOfDay? timeIn,
     TimeOfDay? timeOut,
     this.parent,
     this.notes,
-  }) {
+  }) : _date = date {
     project = projects.where((element) => element.id == preferences.getInt("prefProject")).isNotEmpty ?
       projects.where((element) => element.id == preferences.getInt("prefProject")).first :
       projects.first;
@@ -143,6 +176,8 @@ class EmptyTimesheetRecord {
     } else if (timeIn != null && timeOut != null) {
       _timeIn = timeIn;
       _timeOut = timeOut;
+    } if (timeIn != null) {
+      _timeIn = timeIn;
     }
   }
 
@@ -231,6 +266,7 @@ class TimesheetRecord extends EmptyTimesheetRecord {
     controller.add(this);
   }
 
+  @override
   set time(MapEntry<TimeOfDay?, TimeOfDay?> entry) {
 
 
@@ -247,6 +283,7 @@ class TimesheetRecord extends EmptyTimesheetRecord {
 
 
 
+  @override
   Future<TimesheetRecord?> get remove async {
     Oro oro = Oro();
     OroCommand command = OroCommand(
@@ -263,7 +300,18 @@ class TimesheetRecord extends EmptyTimesheetRecord {
     return this;
   }
 
-  Future<TimesheetRecord> save() async {
+  Future<TimesheetRecord> pasteTo([DateTime? newDate]) async {
+    TimesheetRecord newRecord = await super.save(newDate);
+    id = newRecord.id;
+    _date = newRecord.date;
+    return newRecord;
+  }
+  
+  @override
+  Future<TimesheetRecord> save([DateTime? newDate]) async {
+    if (newDate != null) {
+      return super.save(newDate);
+    }
     Oro oro = Oro();
 
     OroCommand command = OroCommand(
@@ -274,13 +322,19 @@ class TimesheetRecord extends EmptyTimesheetRecord {
           OroCommand(tag: "sub_project_id", innerText: subProject.id.toString()),
           OroCommand(tag: "activity_type_id", innerText: activity.id.toString()),
           OroCommand(tag: "shift", innerText: (shift.index ?? 1).toString()),
-
+          OroCommand(tag: "notes", innerText: notes),
           OroCommand(tag: "time_in", innerText: _timeIn.show),
           OroCommand(tag: "time_out", innerText: _timeOut.show),
           OroCommand(tag: "minutes", innerText: _timeOut.difference(_timeIn).inMinutes.toString()),
         ]
     );
-    Response result = await oro.send(command);
+    if (newDate != null) {
+      command.commands?.add(
+        OroCommand(tag: "date", innerText: DateFormat("yyyy-MM-dd").format(newDate))
+      );
+    }
+    await oro.send(command);
+
     controller.add(this);
     return this;
   }
@@ -304,10 +358,12 @@ class TimesheetRecord extends EmptyTimesheetRecord {
 
         shift = record.shift!,
         _timeIn = record.timeIn,
-        _timeOut = record.timeOut,
+        _timeOut = record.timeOut ?? record.timeIn,
         super(date,
           notes: record.notes
-      );
+      ) {
+    assert(record.timeOut != null);
+  }
 
   TimesheetRecord.fromXmlElement({
     required XmlElement this.element,

@@ -29,6 +29,14 @@ class Week {
     return "{start: $start, end: $end}";
     return super.toString();
   }
+
+  @override
+  bool operator ==(Object other){
+    // TODO: implement ==
+    if (other is! Week) return false;
+
+    return start.difference(other.start).inDays == 0;
+  }
 }
 
 class TimesheetWeek extends OroList<TimesheetRecord> {
@@ -97,9 +105,7 @@ class TimesheetWeek extends OroList<TimesheetRecord> {
     if (status.status == WeekStatus.submitted) {
       updateStatus(WeekStatus.not_submitted);
     } else if (status.status == WeekStatus.not_submitted) {
-      print("i uodate");
       updateStatus(WeekStatus.submitted).then((value) {
-        print("i uodated");
         notifications.cancelTimesheetNotification;
       });
     }
@@ -121,6 +127,20 @@ class TimesheetWeek extends OroList<TimesheetRecord> {
   TimesheetWeek get copy {
     TimesheetWeek newTimesheetWeek = TimesheetWeek(employeeId: employeeId, week: week);
     return newTimesheetWeek;
+  }
+
+  Future<TimesheetWeek> pasteTo(TimesheetWeek newWeek) async {
+    Duration gap = week.start.difference(newWeek.week.start);
+    Future<List<TimesheetRecord>> result;
+    result = map((element) => element.pasteTo(element.date.subtract(gap))).wait;
+    List<TimesheetRecord> listRecords = await result;
+    newWeek.addAll(listRecords);
+    /*for (var record in this) {
+      await record.pasteTo(record.date.subtract(gap));
+      newWeek.add(record);
+      //day.date = DateTime.now();
+    }*/
+    return this;
   }
 
   //TimesheetWeek.fromDays() : super.fromList(newList: newList)

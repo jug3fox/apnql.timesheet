@@ -4,7 +4,7 @@ import 'package:apnql_timesheet/model/general/date.dart';
 class TimeButtonWidget extends StatefulWidget {
   final String title;
   final TimeOfDay time;
-  final EdgeInsets? padding;
+  final EdgeInsetsGeometry? padding;
   final Function(TimeOfDay newTime) onChange;
   const TimeButtonWidget({
     this.padding,
@@ -64,7 +64,7 @@ class _TimeButtonWidgetState extends State<TimeButtonWidget> {
           ),
         ),
         Positioned(
-          top: -10 - ((widget.padding?.top ?? 0) < -8 ? -8 : widget.padding?.top ?? 0),
+          top: -10 - ((widget.padding?.resolve(null).top ?? 0) < -8 ? -8 : widget.padding?.resolve(null).top ?? 0),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(

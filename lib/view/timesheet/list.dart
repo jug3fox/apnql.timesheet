@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:apnql_timesheet/model/timesheet/record.dart';
 import 'package:flutter/material.dart';
 import 'package:apnql_timesheet/model/employee/main.dart';
 import 'package:apnql_timesheet/model/timesheet/list.dart';
@@ -15,8 +16,10 @@ import 'package:flutter/services.dart';
 
 class TimeSheetWeeksWidget extends StatefulWidget {
   final EmployeeInfo employee;
+  final PunchTimesheetRecord? punchRecord;
   final Week? initialWeek;
-  const TimeSheetWeeksWidget(this.employee, {this.initialWeek, Key? key}) : super(key: key);
+  final Function(TimesheetWeek week) onWeekChanged;
+  const TimeSheetWeeksWidget(this.employee, {this.punchRecord, required this.onWeekChanged, this.initialWeek, Key? key}) : super(key: key);
 
   @override
   State<TimeSheetWeeksWidget> createState() => _TimeSheetWeeksWidgetState();
@@ -28,7 +31,6 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
   RangeValues range = RangeValues(7, 17);
   double prevScale = 2.3;
 
-  ValueNotifier<TimesheetWeek?> weekCopied = ValueNotifier(null);
   late TimesheetWeek currentWeek;
   WeekStatus? currentStatus;
 
@@ -58,7 +60,6 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
 
     TimesheetWeek prevWeek = TimesheetWeek(employeeId: widget.employee.id, week: Week(DateTime.now().subtract(Duration(days: 7))));
     prevWeek.status.stream.listen((event) {
-      print(prevWeek.status.status);
       if(prevWeek.status.status == WeekStatus.not_submitted) {
         notifications.initializePlatformNotifications().then((value) {
           notifications.showTimesheetNotification(
@@ -102,9 +103,7 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
     final key = event.logicalKey.keyLabel;
 
     if (event is KeyDownEvent) {
-      print("Key down: $key");
     } else if (event is KeyUpEvent) {
-      print("Key up: ${event.logicalKey}: ${event.physicalKey}");
       if (key == "Arrow Down" && isPortrait || key == "Arrow Right" && !isPortrait) {
         controller.nextPage(duration: Duration(milliseconds: 1200), curve: Curves.easeInOutQuad);
       } else if (key == "Arrow Up" && isPortrait || key == "Arrow Left" && !isPortrait) {
@@ -116,8 +115,6 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
         scrollController.animateTo(scrollController.offset - 50, duration: Duration(milliseconds: 1500), curve: Curves.easeInOutQuad);
       }
     } else if (event is KeyRepeatEvent) {
-    } else if (event is KeyEvent) {
-      print("Key repeat: $key");
     }
 
     return false;
@@ -140,11 +137,14 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.punchRecord != null) {
+
+      print("widget time update1: ${widget.punchRecord?.timeOut}");
+    }
     //int daysDiff = DateTime.now().difference(currentWeek.week.start).inDays;
     //bool inWeek = daysDiff >= 0 && daysDiff < 7;
 
     bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
-    print("init: $initiallyOpen");
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -154,70 +154,80 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
             direction: isPortrait ? Axis.vertical : Axis.horizontal,
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  physics: AlwaysScrollableScrollPhysics(),
-                  scrollDirection: isPortrait ? Axis.horizontal : Axis.vertical,
-                  child: Container(
-                    alignment: Alignment.center,
-                    width: isPortrait ? realSize.width : null,
-                    height: isPortrait ? null : realSize.height,
-                    child: Flex(
-                      clipBehavior: Clip.none,
-                      direction: isPortrait ? Axis.vertical : Axis.horizontal,
-                      children: [
-                        Expanded(
-                            child: Flex(
-                              direction: isPortrait ? Axis.vertical : Axis.horizontal,
-                              children: [
-                                HoursWidget(),
-                                Expanded(
-                                    child: PageView.builder(
-                                      controller: controller,
+                child: Scaffold(
+                  body: SingleChildScrollView(
+                    controller: scrollController,
+                    physics: AlwaysScrollableScrollPhysics(),
+                    scrollDirection: isPortrait ? Axis.horizontal : Axis.vertical,
+                    child: Container(
+                      alignment: Alignment.center,
+                      width: isPortrait ? realSize.width : null,
+                      height: isPortrait ? null : realSize.height,
+                      child: Flex(
+                        clipBehavior: Clip.none,
+                        direction: isPortrait ? Axis.vertical : Axis.horizontal,
+                        children: [
+                          Expanded(
+                              child: Flex(
+                                direction: isPortrait ? Axis.vertical : Axis.horizontal,
+                                children: [
+                                  HoursWidget(),
+                                  Expanded(
+                                      child: PageView.builder(
+                                        controller: controller,
 
-                                      scrollDirection: isPortrait ? Axis.vertical : Axis.horizontal,
-                                      itemBuilder: (context, index) {
-                                        Week newWeek = Week(current.add(Duration(days: (index - 100) * 7)));
-                                        //print()
-                                        if (weeks[newWeek.start] == null) {
-                                          weeks[newWeek.start] = TimesheetWeek(employeeId: widget.employee.id, week: newWeek);
-                                        }
-                                        return ValueListenableBuilder(
-                                          valueListenable: daysToCopy,
-                                          builder: (context, value, child) {
+                                        scrollDirection: isPortrait ? Axis.vertical : Axis.horizontal,
+                                        itemBuilder: (context, index) {
+                                          Week newWeek = Week(current.add(Duration(days: (index - 100) * 7)));
+                                          //print()
+                                          if (weeks[newWeek.start] == null) {
+                                            weeks[newWeek.start] = TimesheetWeek(employeeId: widget.employee.id, week: newWeek);
+                                          }
+                                          return ValueListenableBuilder(
+                                            valueListenable: daysToCopy,
+                                            builder: (context, value, child) {
 
-                                            return TimeSheetWidget(weeks[newWeek.start]!,
-                                              //key: Key(timesheetWeek.week.start.onlyDate),
-                                              controller: scrollController,
-                                              employeeId: widget.employee.id,
-                                              realSize: realSize,
-                                              range: range,
-                                              isCurrent: newWeek == widget.employee.week?.week,
-                                              dataInClipBoard: daysToCopy.value,
-                                              onWeekCreated: (week) {
-                                                //weeks[newWeek] = week;
-                                              },
-                                              onCopyDays: (days) {
-                                                daysToCopy.value = days;
-                                              },
-                                            );
-                                          },
-                                        );
-                                      },
-                                      onPageChanged: (index) {
-                                        Week newWeek = Week(current.add(Duration(days: (index - 100) * 7)));
-                                        setState(() {
-                                          currentWeek = weeks[newWeek.start]!;
-                                          renewSubs;
-                                        });
-                                      },
-                                    )
-                                )
-                              ],
-                            )
-                        )
-                      ],
+                                              return TimeSheetWidget(weeks[newWeek.start]!,
+                                                //key: Key(timesheetWeek.week.start.onlyDate),
+                                                controller: scrollController,
+                                                employeeId: widget.employee.id,
+                                                punchRecord: widget.punchRecord,
+                                                realSize: realSize,
+                                                range: range,
+                                                isCurrent: newWeek == widget.employee.week?.week,
+                                                dataInClipBoard: daysToCopy.value,
+                                                onWeekCreated: (week) {
+                                                  //weeks[newWeek] = week;
+                                                },
+                                                onCopyDays: (days) {
+                                                  daysToCopy.value = days;
+                                                },
+                                              );
+                                            },
+                                          );
+                                        },
+                                        onPageChanged: (index) {
+                                          Week newWeek = Week(current.add(Duration(days: (index - 100) * 7)));
+                                          setState(() {
+                                            currentWeek = weeks[newWeek.start]!;
+                                            widget.onWeekChanged(weeks[newWeek.start]!);
+                                            renewSubs;
+                                          });
+                                        },
+                                      )
+                                  )
+                                ],
+                              )
+                          )
+                        ],
+                      ),
                     ),
+                  ),
+                  floatingActionButtonLocation: FloatingActionButtonLocation.endContained,
+                  floatingActionButton: TimesheetMainMenuWidget(
+                    key: Key(initiallyOpen.toString()),
+                    initiallyOpen : initiallyOpen,
+                    currentWeek: currentWeek,
                   ),
                 )
               ),
@@ -259,7 +269,7 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
       ),
       bottomNavigationBar: Container(
         color: Color.lerp(currentWeek.status.status.color, Colors.black, 0.5),
-        height: isPortrait ? 60 : 36,
+        height: isPortrait ? 50 : 36,
         child: Flex(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           direction: Axis.horizontal,
@@ -276,9 +286,10 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
             Flex(
               direction: isPortrait ? Axis.vertical : Axis.horizontal,
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                   decoration: BoxDecoration(
                     //color: inWeek ? Colors.green.withOpacity(0.5) : null,
                     borderRadius: BorderRadius.circular(10),
@@ -320,12 +331,6 @@ class _TimeSheetWeeksWidgetState extends State<TimeSheetWeeksWidget> {
             ),
           ],
         ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: TimesheetMainMenuWidget(
-        key: Key(initiallyOpen.toString()),
-        initiallyOpen : initiallyOpen,
-        currentWeek: currentWeek,
       ),
     );
   }
